@@ -1,7 +1,7 @@
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 
-#include <DS_timer.h>
+//#include "DS_timer.h"
 
 #include <omp.h>
 #include <stdio.h>
@@ -23,15 +23,15 @@ float A[ROW_SIZE][K_SIZE];
 float B[K_SIZE][COL_SIZE];
 
 // Timer
-DS_timer* timer;
-#define TIMER_HOST	0
-#define TIMER_KERNEL	1
-#define TIMER_KERNEL_SH	2
-#define TIMER_HtoD	3
-#define TIMER_DtoH	4
-#define NUM_TIMER	(TIMER_DtoH+1)
+//DS_timer* timer;
+//#define TIMER_HOST	0
+//#define TIMER_KERNEL	1
+//#define TIMER_KERNEL_SH	2
+//#define TIMER_HtoD	3
+//#define TIMER_DtoH	4
+//#define NUM_TIMER	(TIMER_DtoH+1)
 
-void setTimer(void);
+//void setTimer(void);
 void getInputMatrices(void);
 
 // output matrix
@@ -79,7 +79,7 @@ __global__ void matMul_kernel_shared(float* _A, float* _B, float* _C)
 }
 
 int main(void){
-	timer = NULL; setTimer();
+	//timer = NULL; setTimer();
 
 	float *dA, *dB, *dC; dA = dB = dC = NULL;
 
@@ -93,37 +93,37 @@ int main(void){
 	getInputMatrices();
 
 	// Host code
-	timer->onTimer(TIMER_HOST);
+	//timer->onTimer(TIMER_HOST);
 	for (int r = 0; r < ROW_SIZE; r++)
 		for(int c=0; c<COL_SIZE; c++)
 			for (int k =0; k<K_SIZE; k++)
 				for(int i = 0; i < WORK_LOAD; i++)
 					hostC[r][c] += A[r][k] * B[k][c];
-	timer ->offTimer(TIMER_HOST);
+	//timer ->offTimer(TIMER_HOST);
 
 	// Copy input matrices : H -> D
-	timer->onTimer(TIMER_HtoD);
+	//timer->onTimer(TIMER_HtoD);
 	cudaMemcpy(dA, A, sizeof(float)*MAT_SIZE_A, cudaMemcpyHostToDevice);
 	cudaMemcpy(dB, B, sizeof(float)*MAT_SIZE_B, cudaMemcpyHostToDevice);
-	timer->offTimer(TIMER_HtoD);
+	//timer->offTimer(TIMER_HtoD);
 
 	dim3 blockDim(COL_SIZE, ROW_SIZE);
 
-	timer->onTimer(TIMER_HtoD);
+	//timer->onTimer(TIMER_HtoD);
 	matMul_kernel <<<1, blockDim>>>(dA, dB, dC);
 	cudaThreadSynchronize();
-	timer->offTimer(TIMER_KERNEL);
+	//timer->offTimer(TIMER_KERNEL);
 
 	//// Kenel call (shared memory)
-	timer->onTimer(TIMER_KERNEL_SH);
+	//timer->onTimer(TIMER_KERNEL_SH);
 	matMul_kernel_shared <<<1, blockDim >>> (dA, dB, dC);
 	cudaThreadSynchronize();
-	timer->offTimer(TIMER_KERNEL_SH);
+	//timer->offTimer(TIMER_KERNEL_SH);
 
 	// Get back result : D -> H
-	timer->onTimer(TIMER_DtoH);
+	//timer->onTimer(TIMER_DtoH);
 	cudaMemcpy(deviceC, dC, sizeof(float)*MAT_SIZE_C, cudaMemcpyDeviceToHost);
-	timer->offTimer(TIMER_DtoH);
+	//timer->offTimer(TIMER_DtoH);
 
 	// check the results
 	bool isCorrect = true;
@@ -142,12 +142,12 @@ int main(void){
 	if(isCorrect) printf("Result is correct!\n");
 	else printf("Result is not correct!!!!!!!\n");
 
-	timer->printTimer();
-	if (timer != NULL)
-		delete timer;
+	//timer->printTimer();
+	//if (timer != NULL)
+	//	delete timer;
 	return 0;
 }
-void genInputMatrices(void) {
+void getInputMatrices(void) {
 	for (int r = 0; r < ROW_SIZE; r++)
 		for (int k = 0; k < K_SIZE; k++)
 			A[r][k] = rand() % 100;
@@ -155,7 +155,7 @@ void genInputMatrices(void) {
 		for (int c = 0; c < COL_SIZE; c++)
 			B[k][c] = rand() % 100;
 }
-void setTimer(void)
+/*void setTimer(void)
 {
 	timer = new DS_timer(NUM_TIMER);
 	timer->initTimers();
@@ -164,6 +164,6 @@ void setTimer(void)
 	timer->setTimerName(TIMER_KERNEL_SH, "Kernel launch (shared ver.)");
 	timer->setTimerName(TIMER_HtoD, "[Data transter] host->device");
 	timer->setTimerName(TIMER_DtoH, "[Data transfer] device->host");
-}
+}*/
 //timer->onTimer(TIMER_HtoD);
 //timer->offTimer(TIMER_KERNEL);
