@@ -5,59 +5,62 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define NUM_DATA 1024000 // << 1024*100
-#define MAX_THREAD_IN_SINGLE_BLOCK = 1024
-#define BLOCK_SIZE = 1024
-int block_size = 1024;
-__global__ void vecAdd(int *_a, int *_b, int *_c)
+#define NUM_DATA 1024*1024*1024*2 // << MAX UNSIGNED 
+//#define MAX_THREAD_IN_SINGLE_BLOCK = 8*8*8
+//#define MAX_BLOCK_COUNT_IN_GRID = 1024*1024*1024*4 // Same as unsigned size
+//#define BLOCK_SIZE = 1024
+//#define NUM_THREAD_IN_BLOCK = 8*8*8
+//int block_size = 1024;
+__global__ void vecAdd(unsigned *_a, unsigned *_b, unsigned *_c)
 {
 	//int tID = threadId.x; //1차원 grid 1차원 block
 	//int tID = threadIdx.y*blockDim.x+threadIdx.x; //1차원 grid 2차원 block
 	//int tID = (blockDim.x*blockDim.y*threadIdx.z) + //1차원 grid 3차원 block
-		//	(threadIdx.y*blockDim.x)+
-		//		threadIdx.x
+	//	(threadIdx.y*blockDim.x)+
+	//		threadIdx.x
 	//중략
-	
-	int tID = gridDim.x*gridDim.y*block
+
+	unsigned tID = blockIdx.z*(gridDim.y*gridDim.x*1)
+		+blockIdx.y*(gridDim.x*1)+blockIdx.x*(blockDim.x*blockDim.y*blockDim.z)+blockDim.y*blockDim.x*threadIdx.z+blockDim.x*threadIdx.y+threadIdx.x;
 	_c[tID] = _a[tID] + _b[tID];
 }
 
 int main(void){
-	int *a, *b, *c;
-	int *d_a, *d_b, *d_c;
+	unsigned *a, *b, *c;
+	unsigned *d_a, *d_b, *d_c;
 
-	int memSize = sizeof(int)*NUM_DATA;
-	printf("%d elements, memSize = %d bytes\n", NUM_DATA, memSize);
+	unsigned memSize = sizeof(unsigned)*NUM_DATA;
+	printf("%u elements, memSize = %u bytes\n", NUM_DATA, memSize);
 
-	a = new int[NUM_DATA]; memset(a, 0, memSize);
-	b = new int[NUM_DATA]; memset(b, 0, memSize);
-	c = new int[NUM_DATA]; memset(c, 0, memSize);
-	
-	for (int i =0; i< NUM_DATA; i++){
+	a = new unsigned[NUM_DATA]; memset(a, 0, memSize);
+	b = new unsigned[NUM_DATA]; memset(b, 0, memSize);
+	c = new unsigned[NUM_DATA]; memset(c, 0, memSize);
+
+	for (unsigned i =0; i< NUM_DATA; i++){
 		a[i] = rand() % 10;
 		b[i] = rand() % 10;
 	}
 	cudaMalloc(&d_a, memSize);
 	cudaMalloc(&d_b, memSize);
 	cudaMalloc(&d_c, memSize);
-	
+
 	//Under two line synchronize automatically. You don't need to use synchronize.
 	cudaMemcpy(d_a, a, memSize, cudaMemcpyHostToDevice); 
 	cudaMemcpy(d_b, b, memSize, cudaMemcpyHostToDevice);
-	
+
 	// Kernel call
-	dim3 dimGrid(NUM_DATA/1024, 1, 1);
-	dim3 dimBlock(1024,1,1); //MAX_SIZE = 1024
+	dim3 dimGrid(1024*64, 1024*32, 1);
+	dim3 dimBlock(1, 1, 1); //dimBlock should be total <= 1024
 	vecAdd<<<dimGrid, dimBlock >>>(d_a, d_b, d_c);
 	cudaDeviceSynchronize();
 	cudaMemcpy(c, d_c, memSize, cudaMemcpyDeviceToHost);
 
 	//check results
 	bool result = true;
-	for (int i =0; i<NUM_DATA; i++)
+	for (unsigned i =0; i<NUM_DATA; i++)
 	{
 		if((a[i] + b[i]) != c[i]){
-			printf("[%d] The results is not matched! (%d, %d)\n",
+			printf("[%u] The results is not matched! (%u, %u)\n",
 					i, a[i] + b[i], c[i]);
 			result = false;
 		}
