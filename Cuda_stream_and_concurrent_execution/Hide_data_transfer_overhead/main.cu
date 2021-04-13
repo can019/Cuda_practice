@@ -14,13 +14,13 @@ int main(void)
 
 	cudaMallocHost(&in, sizeof(int)*ARRAY_SIZE); memset(in, 0, sizeof(int)*ARRAY_SIZE);
 	cudaMallocHost(&out, sizeof(int)*ARRAY_SIZE); memset(out, 0, sizeof(int)*ARRAY_SIZE);
-	
+
 	cudaMalloc(&dIn, sizeof(int)*ARRAY_SIZE);
 	cudaMalloc(&dOut, sizeof(int)*ARRAY_SIZE);
-	
+
 	LOOP_I(ARRAY_SIZE);
 	in[i] = rand() % 10;
-	
+
 	// Single stream version
 	cudaMemcpy(dIn, in, sizeof(int)*ARRAY_SIZE, cudaMemcpyHostToDevice);
 	myKernel << <NUM_BLOCK, NUM_T_IN_B>>> (dIn, dOut);
@@ -30,7 +30,7 @@ int main(void)
 	cudaStream_t stream[NUM_STREAMS];
 	LOOP_I(NUM_STREAMS);
 	cudaStreamCreate(&stream[i]);
-	
+
 	int chunkSize = ARRAY_SIZE / NUM_STREAMS;
 	LOOP_I(NUM_STREAMS)
 	{
@@ -43,7 +43,7 @@ int main(void)
 				, sizeof(int)*chunkSize, cudaMemcpyDeviceToHost, stream[i]);
 	}
 	cudaDeviceSynchronize();
-	
+
 	LOOP_I(NUM_STREAMS) cudaStreamDestroy(stream[i]);
 	cudaFree(dIn); cudaFree(dOut);
 	cudaFreeHost(in); cudaFreeHost(out); cudaFreeHost(out2);
