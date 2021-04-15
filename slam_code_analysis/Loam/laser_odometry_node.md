@@ -10,8 +10,8 @@ LaserOdometry의 spin() 호출.
 
 - - -
 ## `LaserOdometry.cpp`
-#### 현재상황 :: `laser_odometry_node.cpp에서 LaserOdometry 객체 생성 후 spin()함수 실행.
-<b>`[Line 254~270]</b>
+#### 현재상황 :: `laser_odometry_node.cpp`에서 LaserOdometry 객체 생성 후 spin()함수 실행.
+<b>`[Line 254~270]`</b>
 rate 설정하고 process()호출.
 - `ros::Rate rate(double frequency);`
   - 원하는 실행 속도 설정.
@@ -23,8 +23,8 @@ rate 설정하고 process()호출.
     - ros::shutdown()이 호출되는 경우
     - 모든 ros::NodeHandels가 죽는 경우.
 
-#### 현재상황 :: `laser_odometry_node.cpp에서 LaserOdometry 객체 생성 후 spin()함수 실행 ->
-    process() 호출`
+#### 현재상황 :: `laser_odometry_node.cpp`에서 LaserOdometry 객체 생성 후 spin()함수 실행 ->
+#### process() 호출
 
 
 
