@@ -1,0 +1,131 @@
+먼저 왜 하나의 프로그램에 main이 4개냐?
+
+ros -> node단위로 실행.
+node는 실행할 수 있는 최소단위(어떤 대에선 프로세스라 하고 프로그램이라 하는데
+도통 모르겠음)
+
+node와 node끼리는 msg통신으로 주고 받는다.
+<multi_scan_registration_node.cpp>
+
+Interpollation IMU데이터를 사용.
+목표
+- 레이저 움직임 보정.
+
+ros::init -> ros 등록
+
+*NodeHandle? ROS에서
+ros::NodeHandle node;
+ros::NodeHandle privateNode("~") ->private는 ~을 넣는다.
+<번역기 :: 기본적으로 노드 핸들은 현재 위치에 주제 등을 생성하지만, ROS NodeHandle을 생성할 때 매개 변수를 제공하여 재정의할 수 있습니다. 특수 문자 "~"는 이름 충돌이나 이와 같은 다른 문제를 걱정할 필요 없이 통신 채널을 만들 수 있는 노드 전용 공간을 나타냅니다.
+
+어쨌든 이 작업이 확실하지 않은 경우 인수 없이 노드 핸들을 하나만 생성합니다. 이 문제에 대한 자세한 내용은 Rospp 튜토리얼을 참조하십시오.
+출처 :: https://answers.ros.org/question/68182/what-is-nodehandle/
+>
+
+그 다음 multiscan 변수 생성.
+loam ::이라해서 ros에 있는 건줄 알았는데 자기들이 loam이라는 namespace를 multiscanResistration.cpp에
+서 둘러놨음
+
+multiscan.setup에 아까 선언한 node 두개를 전달.
+
+<--MultiScanRegistration.cpp-->
+	
+{현재상황 :: multi_scan_reistration.node.cpp에서 setup호출}
+	setup -> RegistrationParms 타입의 config변수를 할당. (뭔지 모르겠음. 못찾겠음)
+	이 후 92번 라인을 통해 (setupROS)를 호출.
+	
+	
+{현재상황 :: multi_scan_reistration.node.cpp에서 setup호출 -> setROS호출}
+
+[Line 107~127] 
+	벨로다인 제품군인 경우.
+	lidarName이라는 string에 "lidar"라는 key값이 가진 value를 저장.
+	여기서 우리가 제공하는 lidar와 맞지 않으면 error msg 출력 후 return false.
+	
+	(getParam -> ROS의 NodeHandle에서 지원하는 것. ROS자체는 아두이노를 위한 os. 얘들은 센서들이랑
+	연결되는 정보들을 disctionary로 가지고 있음. 이 때 key값들은 다 표준이 정해져있음.
+	즉 getParam는 dictionary를 뒤져서 해당 key에 준하는 value를 가져옴.)
+	(ROS_INFO, ROS_ERROR는 얘들은 ROS에서 지원하는 string/err 출력함수.)
+	
+	만약 맞다면 _scanMapper에 MultiScanMapper에 정의 되어있는 객체를 저장. (Inner class)
+	이 후 현재 lidar이름을 c_str(cpp의 str을 c타입의 char로 출력. 왜 이런짓하는진 모르겠)
+	
+	참고 :: _가 붙는 변수들은 private변수(cpp standar naming regulation이라고 이성호 교수가 그랬었음). Header에 다 정의 되어있으니 참고.
+	
+	123~125에서 다시 lidar에서 지정한 frame단위가 없으면 config_out.scanPeriod를 0
+	.1로 바꿈.(위에서도 말했지만 config 저녀석들 모르겠음. 사실 아직 안중요해 보여서 안찾아봄.)
+	
+[Line 128~145]
+	비벨로다인 제품군이 아닌경우
+	vAngleMin = minVerticalAngle
+	vAngleMax = maxVerticalAngle
+	scanring ? 뭔지 모르겠음. 멘토님께 여쭤보는게 나을듯.
+	찾아봤는데 2-line lidar == 2 rings lidar == ? 이상태임.
+	암튼 최소각 최대각 이랑 ring lidar개수 확인해서 떨굼.
+	vertical이 세로니까 위 아래로 돌릴 수 있는 각인듯(추측)
+	
+	_scanMapper에 vAngleMin, vAngleMax, nScanRings 전달.
+	msg 띄움
+	
+[Line 148~151]
+	
+	(*ROS에서는 Publisher == 컴퓨터/서버, subsriber == 로봇.
+	subscribe == topic의 내용에 해당하는 메세지 형태의 데이터를 수신하는 것(recv)
+	publish == subscribe의 반대.
+	topic == publisher와 subscribe간에 이동하는 데이터의 일종.
+	단방향 통신이면 topic, 양방향이면 message.
+	
+
+	_subLaserCloud(type == ros::Subscriber)
+	MultiScanRegistration::handleCouldMessage와 현재 class의 pointer를 인자로 넘김.
+	3번째 인자 == 함수포인터, 4번째 인자는 callback 힌트.
+
+	(this는 해당 class의 숨겨진 포인터.)
+	메세지가 오면 저 fp가 호출된다 함.
+	(참고 ::http://docs.ros.org/en/kinetic/api/roscpp/html/classros_1_1NodeHandle.html#abdd3284053c2d5cbf65778989eaa1708)
+	
+
+{현재상황 :: multi_scan_reistration.node.cpp에서 setup호출 -> setROS호출
+->setROS 마지막줄에서 걸어논 event가 일어나 handleCloudMessage가 호출}
+
+[Line 156~168]
+	header file까보니 _systemDelay의 default 값은 20.
+	딜레이 카운터라고 주석 붙어있음.
+	일단 158-162는 수신 control하겠다는 의미로 파악하고 점프.
+	
+	3D 포인트클라우드 변수 laserCloudIN 선언하고 subscriber에서 보낸
+	laserCloudMsg를 형변환해서 넣음.
+	process 호출
+
+
+{현재상황 :: multi_scan_reistration.node.cpp에서 setup호출 -> setROS호출
+->setROS 마지막줄에서 걸어논 event가 일어나 handleCloudMessage가 호출
+-> 데이터 형태 form 변형하고 process호출}
+
+	여기서 실질적으로 목표를 진행함.
+	*****bottleneck*****
+	
+	논문 읽어보니 lidar는 두가지 방향으로 동시에 이동함.
+	1. 수평방향으로 360도
+	2. 최대수직각-> 최소수평각 다시 최대수직각 -> 최소수직각
+	
+	보정 후 null값 제거하고 interpolation함.
+	
+	그 다음 projectPointToStartOfSweep호출.(BasicScanRegistration.cpp에 정의)
+	이후 point를 laserCloudScan이란 vector에 저장(vector<pcl::PointCloud<pcl::PointXYZI>>)
+	
+	processScanLines을 호출.(BasicScanRegistration.cpp에 정의)
+	저 함수는 scanTime이란 변수 리셋해주고 _laserCloud를 정렬해줌.
+	여기서 BasicScanRegistration의 _laserCloud에 저장하는거 아님? 라는 의문이 있는데
+	이게 BasicScanRegistration -> ScanRegistration -> MultiScanRegistration으로 상속.
+	1에서 2는 protected 2에서 3은 virtual public으로 상속이라 dynamic dispatch으로
+	MultiScan...에 저장됨.
+	마지막줄에 publishResult()는 ScanRegistration에 정의되어있다.
+	거기서 publishCloudMsg()호출만 6번 하고 끝. 
+	common.h에서 inline으로 정의되있음. (속도 향상)
+	
+	
+	+++
+	publishCloudMsg은 LaserOdometry.cpp에서도 호출하고 LaserMapping에서도 호출.
+	common.h에 저게 선언만 되있음.
+	common.h를 include한건 LaserMapping, LaserOdomety, ScanRegistration.
