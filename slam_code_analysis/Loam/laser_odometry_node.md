@@ -24,12 +24,12 @@ rate 설정하고 process()호출.
     - 모든 ros::NodeHandels가 죽는 경우.
 
 #### 현재상황 :: `laser_odometry_node.cpp`에서 LaserOdometry 객체 생성 후 spin()함수 실행 -> process() 호출
-<b>`[Line 286~294]</b></br>
-LaserOdometry::hasNewData()를 호출하여 예외처리.
-- hasNewData()는 이것저것 조건을 &&한 결과를 return.
+<b>[Line 286~294]</b></br>
+`LaserOdometry::hasNewData()`를 호출하여 예외처리.
+- `LaserOdometry::hasNewData()`는 이것저것 조건을 &&한 결과를 return.
   - 해당 함수는 <b>Line 273~281에 존재</b>
 
-- reset()은hasNewDat()에서 조건검사시 사용한 변수들을 모두 false로 설정.
+- `LaserOdometry::reset()`은`LaserOdometry::hasNewData()`에서 조건검사시 사용한 변수들을 모두 false로 설정.
   - 해당 함수는 <b>Line 168~175에 존재</b>
 
 
