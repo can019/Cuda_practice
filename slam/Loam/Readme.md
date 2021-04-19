@@ -16,4 +16,17 @@
   - XML형식을 취하고 있음.
   - 여기서 Node dependency를 설정.
   - `<Node></Node>`안에 적힌 file을 실행.
-    - Loam의 경우 4개의 node를 실행하게됨.
+    - Loam의 경우 4개의 node를 실행하게됨.  
+ 
+
+### Compile && Running
+- Compile
+  - success
+    ![compile sucess](./assets/loam_compile_success.png)
+- Run
+  - Vanilla (순수한 loam 실행)
+    - without data
+      ![terminal](./assets/vanilla_loam_run.png)
+      ![ui](./assets/vanilla_loam_run_2.png)
+      > 실행을 하면 자동으로 ui가 뜬다.  
+    - with data
