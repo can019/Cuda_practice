@@ -25,7 +25,7 @@
     ![compile sucess](./assets/loam_compile_success.png)
 - Run
   - Vanilla (순수한 loam 실행)
-    - without data
+    - without data   
       ![terminal](./assets/vanilla_loam_run.png)
       ![ui](./assets/vanilla_loam_run_2.png)
       > 실행을 하면 자동으로 ui가 뜬다.  
